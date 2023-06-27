@@ -33,8 +33,8 @@ import java.util.concurrent.Callable;
 public class PutTest implements Callable<Integer> {
     @CommandLine.Option(names = {"-jmeterHome", "--jmeterHome"}, required = true, description = "JMeter's Home directory.")
     private String jmeterHome;
-    @CommandLine.Option(names = {"-numThreads", "--numThreads"}, defaultValue = "10", description = "Parallel threads number you want to specify. (Like how many users)")
-    private int numThreads;
+    @CommandLine.Option(names = {"-threads", "--threads"}, defaultValue = "10", description = "Parallel threads number you want to specify. (Like how many users)")
+    private int threads;
     @CommandLine.Option(names = {"-hosts", "--hosts"}, split=",", defaultValue = "127.0.0.1",description = "The coherence rest proxy hosts. You can specicy multiple hosts seperated by [,] sign. eg 192.168.0.1,192.168.0.2")
     private String[] hosts;
     @CommandLine.Option(names = {"-port", "--port"}, defaultValue = "8080",description = "The port number of coherence rest proxy. Default is 8080.")
@@ -63,18 +63,22 @@ public class PutTest implements Callable<Integer> {
         // Create a loop controller
         LoopController loopController = new LoopController();
         loopController.setLoops(1);
-        loopController.setFirst(true);
+//        loopController.setFirst(true);
         loopController.setProperty(TestElement.TEST_CLASS, LoopController.class.getName());
         loopController.setProperty(TestElement.GUI_CLASS, LoopControlPanel.class.getName());
         loopController.initialize();
 
-        // Create a thread group
-        ThreadGroup threadGroup = new ThreadGroup();
-        threadGroup.setName("Default Thread Group");
-        threadGroup.setNumThreads(numThreads);
-        threadGroup.setRampUp(1);
-        threadGroup.setSamplerController(loopController);
-        threadGroup.setProperty(TestElement.TEST_CLASS, ThreadGroup.class.getName());
+        ThreadGroup[] threadGroups = new ThreadGroup[threads];
+        for(int i = 0; i< threads; i++){
+            // Create a thread group
+            ThreadGroup threadGroup = new ThreadGroup();
+            threadGroup.setName("Thread Group");
+            threadGroup.setNumThreads(1);
+            threadGroup.setRampUp(0);
+            threadGroup.setSamplerController(loopController);
+            threadGroup.setProperty(TestElement.TEST_CLASS, ThreadGroup.class.getName());
+            threadGroups[i] = threadGroup;
+        }
 
         // Create a test plan
         TestPlan testPlan = new TestPlan("Coherence Put Test Plan");
@@ -87,7 +91,10 @@ public class PutTest implements Callable<Integer> {
         testPlanTree.add(testPlan);
 
         // Create another hash tree and add the thread group to our test plan
-        HashTree threadGroupHashTree = testPlanTree.add(testPlan, threadGroup);
+        HashTree[] threadGroupHashTrees = new HashTree[threads];
+        for(int i = 0; i< threads; i++){
+            threadGroupHashTrees[i] = testPlanTree.add(testPlan, threadGroups[i]);
+        }
 
         File testdataDir = new File("./testdata");
         File[] files = testdataDir.listFiles();
@@ -111,7 +118,7 @@ public class PutTest implements Callable<Integer> {
             httpSamplerTree.add(putHttpSampler, responseAssertion);
             httpSamplerTree.add(putHttpSampler, createHeaderManager());
             // Add the http sampler to the hash tree that contains the thread group
-            threadGroupHashTree.add(httpSamplerTree);
+            threadGroupHashTrees[new Random().nextInt(threadGroupHashTrees.length)].add(httpSamplerTree);
         }
 
         // Summariser
@@ -134,6 +141,10 @@ public class PutTest implements Callable<Integer> {
         ssc.setAssertionResultsFailureMessage(true);
         ssc.setThreadCounts(true);
         rc.setSaveConfig(ssc);
+        File testResultsFile = new File("./CoherencePutTestResults.jtl");
+        if(testResultsFile.exists()){
+            testResultsFile.delete();
+        }
         rc.setFilename("./CoherencePutTestResults.jtl");
         testPlanTree.add(testPlanTree.getArray()[0], rc);
 

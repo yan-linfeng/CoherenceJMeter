@@ -6,15 +6,9 @@ import org.apache.jmeter.config.gui.ArgumentsPanel;
 import org.apache.jmeter.control.LoopController;
 import org.apache.jmeter.control.gui.LoopControlPanel;
 import org.apache.jmeter.engine.StandardJMeterEngine;
-import org.apache.jmeter.extractor.json.jsonpath.JSONPostProcessor;
-import org.apache.jmeter.extractor.json.jsonpath.gui.JSONPostProcessorGui;
-import org.apache.jmeter.protocol.http.control.Header;
-import org.apache.jmeter.protocol.http.control.HeaderManager;
 import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
-import org.apache.jmeter.protocol.http.gui.HeaderPanel;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampler;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
-import org.apache.jmeter.protocol.http.util.HTTPFileArg;
 import org.apache.jmeter.reporters.ResultCollector;
 import org.apache.jmeter.reporters.Summariser;
 import org.apache.jmeter.samplers.SampleSaveConfiguration;
@@ -35,8 +29,8 @@ import java.util.concurrent.Callable;
 public class GetTest implements Callable<Integer> {
     @CommandLine.Option(names = {"-jmeterHome", "--jmeterHome"}, required = true, description = "JMeter's Home directory.")
     private String jmeterHome;
-    @CommandLine.Option(names = {"-numThreads", "--numThreads"}, defaultValue = "10", description = "Parallel threads number you want to specify. (Like how many users)")
-    private int numThreads;
+    @CommandLine.Option(names = {"-threads", "--threads"}, defaultValue = "10", description = "Parallel threads number you want to specify. (Like how many users)")
+    private int threads;
     @CommandLine.Option(names = {"-hosts", "--hosts"}, split=",", defaultValue = "127.0.0.1", description = "The coherence rest proxy hosts. You can specicy multiple hosts seperated by [,] sign. eg 192.168.0.1,192.168.0.2")
     private String[] hosts;
     @CommandLine.Option(names = {"-port", "--port"}, defaultValue = "8080", description = "The port number of coherence rest proxy. Default is 8080.")
@@ -54,7 +48,7 @@ public class GetTest implements Callable<Integer> {
 
         // Configure JMeter properties
         JMeterUtils.setJMeterHome(jmeterHome);
-        JMeterUtils.loadJMeterProperties(jmeterHome+"/bin/jmeter.properties");
+        JMeterUtils.loadJMeterProperties(jmeterHome + "/bin/jmeter.properties");
         JMeterUtils.initLocale();
 
         // Response Assertion
@@ -62,22 +56,26 @@ public class GetTest implements Callable<Integer> {
         responseAssertion.setTestFieldResponseCode();
         responseAssertion.addTestString("200");
 
-
         // Create a loop controller
         LoopController loopController = new LoopController();
         loopController.setLoops(1);
-        loopController.setFirst(true);
+//        loopController.setFirst(true);
         loopController.setProperty(TestElement.TEST_CLASS, LoopController.class.getName());
         loopController.setProperty(TestElement.GUI_CLASS, LoopControlPanel.class.getName());
         loopController.initialize();
 
-        // Create a thread group
-        ThreadGroup threadGroup = new ThreadGroup();
-        threadGroup.setName("Default Thread Group");
-        threadGroup.setNumThreads(numThreads);
-        threadGroup.setRampUp(1);
-        threadGroup.setSamplerController(loopController);
-        threadGroup.setProperty(TestElement.TEST_CLASS, ThreadGroup.class.getName());
+        ThreadGroup[] threadGroups = new ThreadGroup[threads];
+        for(int i = 0; i< threads; i++){
+            // Create a thread group
+            ThreadGroup threadGroup = new ThreadGroup();
+            threadGroup.setName("Thread Group");
+            threadGroup.setNumThreads(1);
+            threadGroup.setRampUp(0);
+            threadGroup.setSamplerController(loopController);
+            threadGroup.setProperty(TestElement.TEST_CLASS, ThreadGroup.class.getName());
+            threadGroups[i] = threadGroup;
+        }
+
 
         // Create a test plan
         TestPlan testPlan = new TestPlan("Coherence Get Test Plan");
@@ -89,13 +87,15 @@ public class GetTest implements Callable<Integer> {
         // Add the test plan to our hash tree, this is the top level of our test
         testPlanTree.add(testPlan);
 
-        // Create another hash tree and add the thread group to our test plan
-        HashTree threadGroupHashTree = testPlanTree.add(testPlan, threadGroup);
+        // Create another hash trees and add the thread group to our test plan
+        HashTree[] threadGroupHashTrees = new HashTree[threads];
+        for(int i = 0; i< threads; i++){
+            threadGroupHashTrees[i] = testPlanTree.add(testPlan, threadGroups[i]);
+        }
 
         File testdataDir = new File("./testdata");
         File[] files = testdataDir.listFiles();
         for(File jsonFile:files){
-            System.out.println(jsonFile.getName());
             // Create a sampler
             HTTPSamplerProxy getHttpSampler = new HTTPSamplerProxy();
             getHttpSampler.setDomain(hosts[new Random().nextInt(hosts.length)]);
@@ -111,7 +111,7 @@ public class GetTest implements Callable<Integer> {
             httpSamplerTree.add(getHttpSampler, responseAssertion);
 
             // Add the http sampler to the hash tree that contains the thread group
-            threadGroupHashTree.add(httpSamplerTree);
+            threadGroupHashTrees[new Random().nextInt(threadGroupHashTrees.length)].add(httpSamplerTree);
         }
 
         // Summariser
@@ -134,6 +134,10 @@ public class GetTest implements Callable<Integer> {
         ssc.setAssertionResultsFailureMessage(true);
         ssc.setThreadCounts(true);
         rc.setSaveConfig(ssc);
+        File testResultsFile = new File("./CoherenceGetTestResults.jtl");
+        if(testResultsFile.exists()){
+            testResultsFile.delete();
+        }
         rc.setFilename("./CoherenceGetTestResults.jtl");
         testPlanTree.add(testPlanTree.getArray()[0], rc);
 
