@@ -6,6 +6,9 @@ This tool contains 3 functionalies:
 2. Execute Put Test using JMeter API to Coherence Cluster.
 3. Execute Get Test using JMeter API to Coherence Cluster.
 
+## Requirements
+- JRE/JDK1.8
+
 ## How to generate json data?
 ```java -cp CoherenceJMeter.jar --count=100 --size=100KB --start-id=1```
 
