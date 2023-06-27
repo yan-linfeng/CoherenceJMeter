@@ -1,4 +1,4 @@
-# Java Tool using JMeter API for testing Coherence Cluster
+# Java Tool using JMeter API for testing Coherence Cluster that using Rest Proxy
 
 ## What can this tool do ?
 This tool contains 3 functionalies:
