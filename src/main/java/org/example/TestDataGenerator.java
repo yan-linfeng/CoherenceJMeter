@@ -34,6 +34,12 @@ public class TestDataGenerator implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         this.JSON_SIZE_IN_BYTES = parseJSONSize(size);
+        File testdataDir = new File("./testdata");
+        if(testdataDir.exists()){
+            testdataDir.delete();
+            new File("./testdata").mkdir();
+        }
+
         for(int i=start;i<start+count;i++){
             String filename = String.format("%s.json",i);
             Map<String,Object> entity = new HashMap();
