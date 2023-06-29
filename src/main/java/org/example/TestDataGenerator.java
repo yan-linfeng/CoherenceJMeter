@@ -37,8 +37,8 @@ public class TestDataGenerator implements Callable<Integer> {
         File testdataDir = new File("./testdata");
         if(testdataDir.exists()){
             testdataDir.delete();
-            new File("./testdata").mkdir();
         }
+        new File("./testdata").mkdir();
 
         for(int i=start;i<start+count;i++){
             String filename = String.format("%s.json",i);
