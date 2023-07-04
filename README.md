@@ -10,7 +10,7 @@ This tool contains 3 functionalies:
 - JRE/JDK1.8
 
 ## How to generate json data?
-```java -cp CoherenceJMeter.jar --count=100 --size=100KB --start-id=1```
+```java -cp CoherenceJMeter.jar org.example.TestDataGenerator --count=100 --size=100KB --start-id=1```
 
 
 ## How to execute Put Test to Coherence Cluster?
