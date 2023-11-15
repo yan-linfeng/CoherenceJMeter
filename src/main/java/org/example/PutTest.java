@@ -99,7 +99,6 @@ public class PutTest implements Callable<Integer> {
         File testdataDir = new File("./testdata");
         File[] files = testdataDir.listFiles();
         for(File jsonFile:files){
-            System.out.println(jsonFile.getName());
             // Create a sampler
             HTTPSamplerProxy putHttpSampler = new HTTPSamplerProxy();
             putHttpSampler.setDomain(hosts[new Random().nextInt(hosts.length)]);

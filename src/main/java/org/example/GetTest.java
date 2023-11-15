@@ -1,10 +1,8 @@
 package org.example;
 
-import org.apache.jmeter.assertions.ResponseAssertion;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.config.gui.ArgumentsPanel;
 import org.apache.jmeter.control.LoopController;
-import org.apache.jmeter.control.gui.LoopControlPanel;
 import org.apache.jmeter.engine.StandardJMeterEngine;
 import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampler;
@@ -18,6 +16,7 @@ import org.apache.jmeter.threads.ThreadGroup;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jorphan.collections.HashTree;
 import org.apache.jorphan.collections.ListedHashTree;
+import org.example.common.Util;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -25,7 +24,7 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
-@CommandLine.Command(name = "gettest", mixinStandardHelpOptions = true, description = "Execute Coherence Put Test.")
+@CommandLine.Command(name = "gettest", mixinStandardHelpOptions = true, description = "Execute Coherence Get Test.")
 public class GetTest implements Callable<Integer> {
     @CommandLine.Option(names = {"-jmeterHome", "--jmeterHome"}, required = true, description = "JMeter's Home directory.")
     private String jmeterHome;
@@ -44,25 +43,9 @@ public class GetTest implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         // Create the Jmeter engine
-        StandardJMeterEngine jm = new StandardJMeterEngine();
-
-        // Configure JMeter properties
-        JMeterUtils.setJMeterHome(jmeterHome);
-        JMeterUtils.loadJMeterProperties(jmeterHome + "/bin/jmeter.properties");
-        JMeterUtils.initLocale();
-
-        // Response Assertion
-        ResponseAssertion responseAssertion = new ResponseAssertion();
-        responseAssertion.setTestFieldResponseCode();
-        responseAssertion.addTestString("200");
-
+        StandardJMeterEngine jm = Util.initJmeterEngine(jmeterHome);
         // Create a loop controller
-        LoopController loopController = new LoopController();
-        loopController.setLoops(1);
-//        loopController.setFirst(true);
-        loopController.setProperty(TestElement.TEST_CLASS, LoopController.class.getName());
-        loopController.setProperty(TestElement.GUI_CLASS, LoopControlPanel.class.getName());
-        loopController.initialize();
+        LoopController loopController = Util.createLoopController();
 
         ThreadGroup[] threadGroups = new ThreadGroup[threads];
         for(int i = 0; i< threads; i++){
@@ -75,7 +58,6 @@ public class GetTest implements Callable<Integer> {
             threadGroup.setProperty(TestElement.TEST_CLASS, ThreadGroup.class.getName());
             threadGroups[i] = threadGroup;
         }
-
 
         // Create a test plan
         TestPlan testPlan = new TestPlan("Coherence Get Test Plan");
@@ -108,7 +90,7 @@ public class GetTest implements Callable<Integer> {
 
             // Create a hash tree to add the post processor to
             HashTree httpSamplerTree = new HashTree();
-            httpSamplerTree.add(getHttpSampler, responseAssertion);
+            httpSamplerTree.add(getHttpSampler, Util.createRespnoseAssertion());
 
             // Add the http sampler to the hash tree that contains the thread group
             threadGroupHashTrees[new Random().nextInt(threadGroupHashTrees.length)].add(httpSamplerTree);
@@ -143,11 +125,10 @@ public class GetTest implements Callable<Integer> {
 
         // Configure
         jm.configure(testPlanTree);
-
         // Run
         jm.run();
-
         return 0;
     }
+
 
 }

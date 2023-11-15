@@ -21,6 +21,7 @@ public class TestDataGenerator implements Callable<Integer> {
     private static final String[] lastNames = new String[]{ "Smith",  "Johnson",  "Williams",  "Brown",  "Jones",  "Garcia",  "Rodriguez",  "Wilson",  "Martinez",  "Anderson",   "Taylor",  "Thomas",  "Hernandez",  "Moore",  "Martin",  "Jackson",  "Thompson",  "White",  "Lopez",  "Lee", "Gonzalez",  "Harris",  "Clark",  "Lewis",  "Robinson",  "Walker",  "Perez",  "Hall",  "Young",  "Allen",  "Sanchez",  "Wright",  "King",  "Scott",  "Green",  "Adams",  "Baker",  "Gomez",  "Nelson",  "Hill",   "Ramirez",  "Campbell",  "Mitchell",  "Roberts",  "Carter",  "Phillips",  "Evans",  "Turner",  "Torres",  "Parker",  "Collins",  "Edwards",  "Stewart",  "Flores",  "Morris",  "Nguyen",  "Murphy",  "Rivera",  "Cook",  "Rogers",  "Morgan",  "Peterson",  "Cooper",  "Reed",  "Bailey",  "Bell",  "Gutierrez",  "Kelly",  "Howard",  "Ward",  "Cox",  "Diaz",  "Richardson",  "Wood",  "Watson",  "Brooks",  "Bennett",  "Gray",  "James",  "Reyes",  "Cruz",  "Hughes",  "Price",  "Myers",  "Long",  "Foster",  "Sanders",  "Ross",  "Morales",  "Powell",  "Sullivan",  "Russell",  "Ortiz",  "Jenkins",  "Perry",  "Butler",  "Coleman",  "Simmons",  "Patterson",  "Jordan",  "Reynolds",  "Hamilton",  "Graham",  "Kim",  "Davis"};
     private static final String[] hobbies = new String[]{ "Reading", "Traveling", "Cycling", "Cooking", "Photography", "Writing", "Painting", "Movies", "Swimming", "Social networking", "Gaming", "Outdoor sports", "Music", "Gardening", "Coffee", "Films", "Hiking", "Board games", "Driving", "Shopping", "Pet care", "Learning languages", "Tennis", "Fishing", "Travel", "Dancing", "Painting   ", "Gadgets", "Cooking", "Fitness", "Yoga", "Blogging", "Stamp collecting", "Watching sports", "Finance and investment", "Card games", "Baking", "Camping", "Reading comics","Car repairing"};
     private static final String[] genders = new String[]{"Male","Female"};
+    private static final Random random = new Random();
     private static final char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
     @Option(names = {"-c", "--count"}, description = "The number of json files you want to generate.")
     private int count = 100;
@@ -41,8 +42,10 @@ public class TestDataGenerator implements Callable<Integer> {
             entity.put("id",i);
             entity.put("name",generateName());
             entity.put("age", new Random().nextInt(60)+18);
-            entity.put("gender",genders[new Random().nextInt(2)]);
-            entity.put("hobby",hobbies[new Random().nextInt(hobbies.length)]);
+            entity.put("gender",genders[random.nextInt(2)]);
+            entity.put("hobby",hobbies[random.nextInt(hobbies.length)]);
+
+            entity.put("category",random.nextInt(1000)+1);
             entity.put("comment","");
             entity.put("comment",generateComment(entity));
             ObjectMapper objectMapper = new ObjectMapper();

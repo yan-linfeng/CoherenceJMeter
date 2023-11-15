@@ -1,0 +1,5 @@
+testdata/*
+target/*
+bak
+memo.md
+dependency-reduced-pom.xml
